@@ -1,59 +1,167 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 📚 BookJournal - Jurnal Bacaan & Manajemen Pustaka Pribadi
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**BookJournal** adalah aplikasi web berbasis **Laravel** yang dirancang untuk membantu pengguna mencatat, mengelola, dan melacak buku-buku yang telah mereka baca. Aplikasi ini dilengkapi dengan integrasi **OpenLibrary API** untuk pencarian data buku otomatis dan fitur **AI Recommendation** untuk memberikan saran bacaan yang cerdas.
 
-## About Laravel
+-----
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## ✨ Fitur Unggulan
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Aplikasi ini memiliki berbagai fitur untuk mendukung aktivitas membaca pengguna:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1.  **Manajemen Buku (CRUD Lengkap):**
 
-## Learning Laravel
+      * Menambah buku ke koleksi pribadi.
+      * Mengedit ulasan, rating, dan tanggal baca.
+      * Menghapus buku dari koleksi.
+      * Melihat daftar buku dengan opsi pengurutan (Sorting) berdasarkan Judul, Rating, atau Tanggal.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+2.  **Integrasi API Publik (OpenLibrary):**
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+      * Fitur pencarian buku otomatis menggunakan **OpenLibrary API**. Pengguna cukup memasukkan judul, dan sistem akan mengambil metadata (Penulis, ISBN, Cover) secara otomatis.
 
-## Laravel Sponsors
+3.  **Rekomendasi Cerdas (AI Powered):**
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+      * Fitur khusus yang menggunakan **Artificial Intelligence (Google Gemini)** untuk menganalisis buku-buku favorit pengguna dan memberikan rekomendasi bacaan selanjutnya.
 
-### Premium Partners
+4.  **Autentikasi & Keamanan:**
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+      * Sistem Login, Register, dan Logout yang aman menggunakan **Laravel Breeze**.
+      * Setiap pengguna memiliki data buku yang terisolasi (Private Journal).
 
-## Contributing
+5.  **Fitur Ekspor Data:**
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+      * Pengguna dapat mengunduh laporan jurnal bacaan mereka dalam format **CSV/Excel**.
 
-## Code of Conduct
+-----
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 🛠️ Teknologi yang Digunakan
 
-## Security Vulnerabilities
+  * **Backend:** PHP 8.2+, Laravel 11/12
+  * **Frontend:** Blade Templates, Tailwind CSS (via Vite), Bootstrap 5 (CDN).
+  * **Database:** SQLite (Default) / MySQL / PostgreSQL.
+  * **API Integrations:** OpenLibrary API, Google Gemini AI.
+  * **Packages:** GuzzleHTTP, Laravel Breeze, Laravel Sanctum.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+-----
 
-## License
+## ⚙️ Persyaratan Sistem (Prerequisites)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Sebelum menjalankan proyek ini, pastikan komputer Anda telah terinstal:
+
+  * [PHP](https://www.php.net/downloads) \>= 8.2
+  * [Composer](https://getcomposer.org/)
+  * [Node.js & NPM](https://nodejs.org/)
+  * Git
+
+-----
+
+## 🚀 Cara Instalasi & Menjalankan (Lokal)
+
+Ikuti langkah-langkah berikut untuk menjalankan proyek di komputer Anda:
+
+### 1\. Clone Repository
+
+```bash
+git clone https://github.com/username-anda/tubes_book_journal.git
+cd tubes_book_journal
+```
+
+### 2\. Install Dependensi Backend (PHP)
+
+```bash
+composer install
+```
+
+### 3\. Install Dependensi Frontend (Node.js)
+
+```bash
+npm install
+```
+
+### 4\. Konfigurasi Environment (.env)
+
+Salin file konfigurasi contoh dan buat file `.env` baru:
+
+```bash
+cp .env.example .env
+```
+
+Buka file `.env` dan atur konfigurasi berikut:
+
+  * **Database:** Secara default menggunakan SQLite. Jika ingin menggunakan MySQL, ubah `DB_CONNECTION=mysql` dan sesuaikan nama databasenya.
+  * **API Key AI:** Tambahkan baris ini di paling bawah file `.env` untuk mengaktifkan fitur rekomendasi AI:
+    ```ini
+    GEMINI_API_KEY="masukkan_api_key_google_gemini_anda_disini"
+    ```
+    *(Anda bisa mendapatkan API Key gratis di Google AI Studio)*.
+
+### 5\. Generate Key Aplikasi
+
+```bash
+php artisan key:generate
+```
+
+### 6\. Migrasi Database
+
+Buat tabel database yang diperlukan:
+
+```bash
+php artisan migrate
+```
+
+*(Pilih "Yes" jika ditanya untuk membuat file database.sqlite)*.
+
+### 7\. Jalankan Aplikasi
+
+Anda perlu menjalankan dua terminal terpisah:
+
+**Terminal 1 (Menjalankan Server Laravel):**
+
+```bash
+php artisan serve
+```
+
+**Terminal 2 (Menjalankan Vite untuk Asset/CSS):**
+
+```bash
+npm run dev
+```
+
+Akses aplikasi melalui browser di: `http://localhost:8000`
+
+-----
+
+## 📖 Cara Penggunaan
+
+1.  **Registrasi:** Buka halaman Register dan buat akun baru.
+2.  **Tambah Buku:**
+      * Klik menu "Tambah Buku".
+      * Ketik judul buku di kolom pencarian (misal: "Harry Potter") dan klik "Cari".
+      * Pilih buku dari hasil pencarian OpenLibrary, isi Rating dan Catatan, lalu Simpan.
+3.  **Manajemen:** Lihat buku di Beranda. Anda bisa mengedit atau menghapus buku tersebut.
+4.  **Fitur AI:**
+      * Pastikan Anda sudah memiliki beberapa buku dengan rating tinggi.
+      * Klik menu "🤖 Rekomendasi AI" di Navbar.
+      * AI akan memberikan saran buku baru berdasarkan selera Anda.
+5.  **Export:** Klik tombol "Export ke Excel/CSV" di halaman Beranda untuk mengunduh data.
+
+-----
+
+## 📂 Struktur Proyek
+
+  * `app/Http/Controllers`: Logika utama aplikasi (BookController, AIController).
+  * `app/Models`: Model database (Book, User).
+  * `resources/views`: Tampilan antarmuka pengguna (Blade Templates).
+  * `routes/web.php`: Definisi jalur URL aplikasi.
+  * `database/migrations`: Struktur skema database.
+
+-----
+
+## 🤝 Kontribusi & Lisensi
+
+Proyek ini dibuat untuk memenuhi Tugas Besar Pemrograman Web. Dilarang menyalin tanpa izin untuk keperluan komersial.
+
+**Credits:**
+
+  * Dibuat oleh: kelompok 6 WAD
+  * Program Studi Sistem Informasi - Telkom University
