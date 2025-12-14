@@ -5,18 +5,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jurnal Baca Pribadi</title>
-    <link rel="stylesheet" href="{{ asset('style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 </head>
 
 <body>
 
-    <nav class="navbar">
-        <a href="{{ route('home') }}" class="navbar-brand">📚 BookJournal</a>
-        <div class="nav-links">
-            <a href="{{ route('home') }}">Beranda</a>
+   <nav class="navbar">
+    <a href="{{ route('home') }}" class="navbar-brand">📚 BookJournal</a>
+    
+    <div class="nav-links" style="display: flex; align-items: center; gap: 20px;">
+        <a href="{{ route('home') }}">Beranda</a>
+
+        @auth
             <a href="{{ route('book.add') }}">Tambah Buku</a>
-        </div>
-    </nav>
+            
+            <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+                @csrf
+                <button type="submit" class="btn btn-danger" style="padding: 5px 10px; font-size: 0.9rem; margin-left: 10px;">
+                    Logout ({{ Auth::user()->name }})
+                </button>
+            </form>
+        @else
+            <a href="{{ route('login') }}" class="btn btn-secondary" style="padding: 5px 15px; text-decoration: none; color: white;">Log in</a>
+            
+            @if (Route::has('register'))
+                <a href="{{ route('register') }}" class="btn" style="padding: 5px 15px; text-decoration: none; color: white;">Register</a>
+            @endif
+        @endauth
+    </div>
+</nav>
 
     <main class="container">
         @yield('content')
