@@ -10,13 +10,15 @@
 
 <body>
 
-   <nav class="navbar">
+    <nav class="navbar">
     <a href="{{ route('home') }}" class="navbar-brand">📚 BookJournal</a>
     
     <div class="nav-links" style="display: flex; align-items: center; gap: 20px;">
         <a href="{{ route('home') }}">Beranda</a>
 
         @auth
+            <a href="{{ route('ai.index') }}">🤖 Rekomendasi AI</a>
+            
             <a href="{{ route('book.add') }}">Tambah Buku</a>
             
             <form method="POST" action="{{ route('logout') }}" style="display: inline;">
