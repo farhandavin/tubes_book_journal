@@ -12,11 +12,25 @@ class Book extends Model
         'user_id',
         'title',
         'author',
+        'category',
         'isbn',
         'rating',
         'notes',
-        'date_read'
+        'date_read',
+        'sentiment'
     ];
+
+    // Relasi ke peminjaman
+    public function borrowings()
+    {
+        return $this->hasMany(Borrowing::class);
+    }
+
+    // Cek apakah buku sedang dipinjam oleh siapapun
+    public function isBorrowed()
+    {
+        return $this->borrowings()->where('status', 'dipinjam')->exists();
+    }
     
     // Casting agar date_read dibaca sebagai format tanggal oleh Carbon
     protected $casts = [

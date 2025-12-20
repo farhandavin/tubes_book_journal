@@ -4,43 +4,53 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Book;
-use Illuminate\Support\Facades\Http; // Untuk request ke API OpenLibrary
+use Illuminate\Support\Facades\Http;
 
 class BookController extends Controller
 {
-    // MENAMPILKAN DASHBOARD
-    public function index(Request $request)
+    // MENAMPILKAN DASHBOARD DENGAN FILTER KATEGORI
+   public function index(Request $request)
     {
+        // ... (Kode sorting & filter kategori di atas TETAP SAMA, jangan dihapus) ...
         $sortOption = $request->query('sort', 'id');
+        $categoryFilter = $request->query('category');
         $order = 'DESC';
         $column = 'id';
+        
+        // ... (Logika if/else sorting TETAP SAMA) ...
+        if ($sortOption === 'rating') { $column = 'rating'; } 
+        elseif ($sortOption === 'date') { $column = 'date_read'; } 
+        elseif ($sortOption === 'title') { $column = 'title'; $order = 'ASC'; }
 
-        if ($sortOption === 'rating') {
-            $column = 'rating';
-        } elseif ($sortOption === 'date') {
-            $column = 'date_read';
-        } elseif ($sortOption === 'title') {
-            $column = 'title';
-            $order = 'ASC';
+        // PERUBAHAN DI SINI:
+        // Hapus "where('user_id', auth()->id())" agar menampilkan SEMUA buku
+        $query = Book::query(); 
+
+        if ($categoryFilter) {
+            $query->where('category', $categoryFilter);
         }
 
-        // Ambil buku hanya milik user yang sedang login
-        $books = Book::where('user_id', auth()->id())
-                     ->orderBy($column, $order)
-                     ->get();
+        $books = $query->orderBy($column, $order)->get();
 
-        return view('index', compact('books'));
+        // Ambil kategori dari semua buku
+        $categories = Book::whereNotNull('category')->distinct()->pluck('category');
+
+        return view('index', compact('books', 'categories'));
     }
-
-    // HALAMAN FORM TAMBAH
     public function addForm()
     {
         return view('add', ['results' => null]);
     }
 
-    // CARI BUKU API
     public function searchApi(Request $request)
     {
+        // ... (Kode searchApi TETAP SAMA seperti sebelumnya, tidak perlu diubah) ...
+        // Agar kode tidak kepanjangan di chat, biarkan bagian searchApi ini seperti kode lama Anda.
+
+        // Cukup pastikan return view-nya tetap sama:
+        // return view('add', ['results' => $results]);
+
+        // --- SEMENTARA SAYA COPY ULANG BAGIAN INI AGAR ANDA BISA LANGSUNG PASTE FULL FILE ---
         $query = $request->input('query');
         $results = [];
 
@@ -54,7 +64,6 @@ class BookController extends Controller
 
             foreach ($docs as $book) {
                 $processedIsbn = null;
-
                 if (isset($book['ia'])) {
                     foreach ($book['ia'] as $item) {
                         if (str_starts_with($item, 'isbn_')) {
@@ -63,7 +72,6 @@ class BookController extends Controller
                         }
                     }
                 }
-
                 $results[] = (object) [
                     'title' => $book['title'] ?? 'Unknown Title',
                     'author_name' => isset($book['author_name']) ? $book['author_name'] : ['Tidak diketahui'],
@@ -71,68 +79,68 @@ class BookController extends Controller
                     'isbn' => $processedIsbn ? [$processedIsbn] : ($book['isbn'] ?? [])
                 ];
             }
-
         } catch (\Exception $e) {
-            // Error handling diam
         }
 
         return view('add', ['results' => $results]);
     }
 
-    // SIMPAN BUKU KE DB (Bagian yang Diperbaiki)
+    // SIMPAN BUKU (UPDATE: Tambah Category)
     public function store(Request $request)
     {
-        // 1. VALIDASI INPUT (user_id dihapus dari sini)
         $request->validate([
-            'title'  => 'required',
-            'rating' => 'required|numeric|min:1|max:10', // Pastikan format string ini benar
+            'title' => 'required',
+            'rating' => 'required|numeric|min:1|max:10',
+            'category' => 'nullable|string|max:50', // Validasi kategori
         ]);
 
-        // 2. SIMPAN KE DATABASE (user_id dimasukkan di sini)
         Book::create([
-            'user_id'   => auth()->id(), // <--- DITAMBAHKAN DI SINI
-            'title'     => $request->title,
-            'author'    => $request->author,
-            'isbn'      => $request->isbn,
-            'rating'    => $request->rating,
-            'notes'     => $request->notes,
+            'user_id' => auth()->id(),
+            'title' => $request->title,
+            'author' => $request->author,
+            'category' => $request->category, // <--- Simpan Kategori
+            'isbn' => $request->isbn,
+            'rating' => $request->rating,
+            'notes' => $request->notes,
             'date_read' => $request->date_read ?: null,
         ]);
 
         return redirect()->route('home')->with('success', 'Buku berhasil ditambahkan!');
     }
 
-    // HALAMAN EDIT
     public function editForm($id)
     {
-        // Pastikan hanya bisa edit buku milik sendiri
         $book = Book::where('user_id', auth()->id())->findOrFail($id);
         return view('edit', compact('book'));
     }
 
-    // UPDATE BUKU
+    // UPDATE BUKU (UPDATE: Tambah Category)
     public function update(Request $request, $id)
     {
         $request->validate([
             'rating' => 'required|numeric|min:1|max:10',
+            'category' => 'nullable|string|max:50',
         ]);
 
         $book = Book::where('user_id', auth()->id())->findOrFail($id);
-        
+
         $book->update([
-            'rating'    => $request->rating,
-            'notes'     => $request->notes,
+            'rating' => $request->rating,
+            'notes' => $request->notes,
+            'category' => $request->category, // <--- Update Kategori
             'date_read' => $request->date_read ?: null,
         ]);
 
         return redirect()->route('home');
     }
 
-    // EXPORT CSV
-    public function exportCsv()
+   public function exportCsv()
     {
-        $books = Book::where('user_id', auth()->id())->get();
-        $csvFileName = 'laporan-buku-' . date('Y-m-d') . '.csv';
+        // Admin export semua buku, User biasa export buku yang mereka buat/miliki (jika ada)
+        // Atau kita set agar export ini mendownload seluruh katalog perpustakaan
+        $books = Book::all(); 
+        
+        $csvFileName = 'laporan-perpustakaan-' . date('Y-m-d') . '.csv';
 
         $headers = [
             "Content-type"        => "text/csv",
@@ -144,14 +152,23 @@ class BookController extends Controller
 
         $callback = function () use ($books) {
             $file = fopen('php://output', 'w');
-            fputcsv($file, ['Judul', 'Penulis', 'Rating', 'Tanggal Baca', 'Catatan']);
+            
+            // Header Kolom CSV
+            fputcsv($file, ['ID', 'Judul', 'Penulis', 'Kategori', 'ISBN', 'Rating', 'Sentimen AI', 'Status', 'Catatan']);
 
             foreach ($books as $book) {
+                // Cek status peminjaman
+                $status = $book->isBorrowed() ? 'Sedang Dipinjam' : 'Tersedia';
+
                 fputcsv($file, [
+                    $book->id,
                     $book->title,
                     $book->author,
+                    $book->category ?? '-',    // Kolom Kategori
+                    $book->isbn,
                     $book->rating,
-                    $book->date_read,
+                    $book->sentiment ?? '-',   // Kolom Sentimen
+                    $status,                   // Status Peminjaman
                     $book->notes
                 ]);
             }
@@ -161,16 +178,12 @@ class BookController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    // HAPUS BUKU
     public function destroy($id)
     {
-        // Pastikan delete hanya buku milik user yg login
         $book = Book::where('user_id', auth()->id())->where('id', $id)->first();
-        
         if ($book) {
             $book->delete();
         }
-        
         return redirect()->route('home');
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -7,30 +8,30 @@ use App\Models\Book;
 
 class AIController extends Controller
 {
+    // Halaman rekomendasi (Opsional, kita fokus ke analisis sentimen dulu)
     public function index() {
         return view('ai.index', ['recommendation' => null]);
     }
 
-    public function askAI() {
-        // 1. Ambil 5 judul buku terakhir yang disukai user (rating >= 7)
-        $books = Book::where('user_id', auth()->id())
-                     ->where('rating', '>=', 7)
-                     ->limit(5)
-                     ->pluck('title')
-                     ->toArray();
+    // LOGIKA BARU: ANALISIS SENTIMEN PER BUKU
+    public function analyzeSentiment($id)
+    {
+        // 1. Cari buku milik user
+        $book = Book::where('user_id', auth()->id())->findOrFail($id);
 
-        if (empty($books)) {
-            return view('ai.index', ['recommendation' => 'Anda belum menilai cukup buku untuk mendapatkan rekomendasi.']);
+        // 2. Cek apakah ada catatan
+        if (empty($book->notes)) {
+            return back()->with('error', 'Isi catatan/ulasan buku terlebih dahulu untuk dianalisis.');
         }
 
-        $bookList = implode(', ', $books);
-        
-        // 2. Kirim Prompt ke AI (Contoh menggunakan Gemini API)
-        // Pastikan Anda punya API Key di .env: GEMINI_API_KEY=xyz...
-        $apiKey = env('GEMINI_API_KEY'); 
-        $prompt = "Saya menyukai buku-buku ini: $bookList. Berikan saya 3 rekomendasi buku lain yang mirip beserta alasan singkat dalam bahasa Indonesia.";
+        // 3. Siapkan Prompt
+        $apiKey = env('GEMINI_API_KEY');
+        // Prompt khusus agar jawabannya singkat padat
+        $prompt = "Analisis sentimen dari ulasan buku berikut: \"{$book->notes}\". "
+                . "Jawab HANYA dengan satu kata: POSITIF, NETRAL, atau NEGATIF. Jangan ada kata lain.";
 
         try {
+            // 4. Kirim ke Gemini API
             $response = Http::withHeaders(['Content-Type' => 'application/json'])
                 ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}", [
                     'contents' => [
@@ -39,12 +40,25 @@ class AIController extends Controller
                 ]);
             
             $result = $response->json();
-            $recommendation = $result['candidates'][0]['content']['parts'][0]['text'] ?? 'Gagal mendapatkan respon AI.';
             
-        } catch (\Exception $e) {
-            $recommendation = "Terjadi kesalahan koneksi ke AI.";
-        }
+            // Ambil teks jawaban
+            $sentiment = $result['candidates'][0]['content']['parts'][0]['text'] ?? 'NETRAL';
+            
+            // Bersihkan format (hapus spasi/enter/bintang bold jika ada)
+            $sentiment = strtoupper(trim(str_replace(["\n", "\r", "*", "."], '', $sentiment)));
 
-        return view('ai.index', ['recommendation' => $recommendation]);
+            // Validasi manual agar hanya tersimpan 3 kata kunci tersebut
+            if (!in_array($sentiment, ['POSITIF', 'NETRAL', 'NEGATIF'])) {
+                $sentiment = 'NETRAL'; // Default jika AI ngelantur
+            }
+
+            // 5. Simpan ke Database
+            $book->update(['sentiment' => $sentiment]);
+
+            return back()->with('success', 'Analisis sentimen berhasil: ' . $sentiment);
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal terhubung ke AI: ' . $e->getMessage());
+        }
     }
 }
