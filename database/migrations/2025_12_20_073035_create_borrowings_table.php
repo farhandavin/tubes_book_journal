@@ -10,10 +10,12 @@ return new class extends Migration
     {
         Schema::create('borrowings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Peminjam
-            $table->foreignId('book_id')->constrained()->onDelete('cascade'); // Buku yang dipinjam
-            $table->date('borrowed_at'); // Tanggal pinjam
-            $table->date('returned_at')->nullable(); // Tanggal kembali (jika null berarti belum kembali)
+            // Relasi ke Users & Books
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('book_id')->constrained()->onDelete('cascade');
+            
+            $table->date('borrowed_at');
+            $table->date('returned_at')->nullable();
             $table->enum('status', ['dipinjam', 'dikembalikan'])->default('dipinjam');
             $table->timestamps();
         });
