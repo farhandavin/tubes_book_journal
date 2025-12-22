@@ -84,7 +84,7 @@
                     
                     <div class="card-actions" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
     
-    @if(auth()->user()->role == 'admin' || auth()->id() == $book->user_id)
+    @if(auth()->user()?->role == 'admin' || auth()->id() == $book->user_id)
         <a href="{{ route('book.edit', $book->id) }}" class="btn btn-secondary" style="font-size: 0.8rem;">Edit</a>
         <form action="{{ route('book.delete', $book->id) }}" method="POST" style="display: inline;">
             @csrf <button type="submit" class="btn btn-danger" style="font-size: 0.8rem;" onclick="return confirm('Hapus buku ini?')">Hapus</button>

@@ -45,9 +45,17 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware([App\Http\Middleware\IsAdmin::class])->group(function () {
-    Route::get('/admin/users', [App\Http\Controllers\AdminController::class, 'index'])->name('admin.users');
-    Route::delete('/admin/users/{id}', [App\Http\Controllers\AdminController::class, 'destroy'])->name('admin.delete');
     Route::get('/admin/dashboard', [App\Http\Controllers\AdminController::class, 'dashboard'])->name('admin.dashboard');
+
+    // Manajemen User (CRUD)
+    Route::get('/admin/users', [App\Http\Controllers\AdminController::class, 'index'])->name('admin.users');
+    Route::get('/admin/users/create', [App\Http\Controllers\AdminController::class, 'createUser'])->name('admin.users.create'); // Baru
+    Route::post('/admin/users', [App\Http\Controllers\AdminController::class, 'storeUser'])->name('admin.users.store'); // Baru
+    Route::delete('/admin/users/{id}', [App\Http\Controllers\AdminController::class, 'destroy'])->name('admin.delete');
+
+    // Export Laporan (Baru)
+    Route::get('/admin/export/users', [App\Http\Controllers\AdminController::class, 'exportUsers'])->name('admin.export.users');
+    Route::get('/admin/export/books', [App\Http\Controllers\AdminController::class, 'exportBooks'])->name('admin.export.books');
 });
 
 require __DIR__ . '/auth.php';
