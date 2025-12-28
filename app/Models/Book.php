@@ -29,10 +29,12 @@ class Book extends Model
     }
 
     // Cek apakah buku sedang dipinjam oleh siapapun
-    public function isBorrowed()
-    {
-        return $this->borrowings()->where('status', 'dipinjam')->exists();
-    }
+   public function isBorrowed()
+{
+    return $this->borrowings()
+                ->whereIn('status', ['pending', 'dipinjam'])
+                ->exists();
+}
 
     public function reviews()
     {

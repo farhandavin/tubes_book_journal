@@ -36,7 +36,7 @@
                     <small style="color: gray;">{{ $loan->user->email }}</small>
                 </td>
                 <td style="padding: 10px;">{{ $loan->book->title }}</td>
-                <td style="padding: 10px;">{{ \Carbon\Carbon::parse($loan->borrow_date)->format('d M Y') }}</td>
+                <td style="padding: 10px;">{{ \Carbon\Carbon::parse($loan->borrowed_at)->format('d M Y') }}</td>
                 <td style="padding: 10px;">
                     @php
                         $colors = [
