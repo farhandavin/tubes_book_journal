@@ -96,21 +96,28 @@
 
 <script>
     function confirmLogout(event, formId) {
-        // Mencegah navigasi link default
-        event.preventDefault();
+        event.preventDefault(); // Stop form submit langsung
+
+        // Debugging: Cek apakah fungsi dipanggil
+        console.log("Tombol logout diklik, ID Form: " . formId);
+        
+        // Cek apakah Swal (SweetAlert) tersedia
+        if (typeof Swal === 'undefined') {
+            alert("SweetAlert belum dimuat! Logout manual.");
+            document.getElementById(formId).submit();
+            return;
+        }
 
         Swal.fire({
             title: 'Yakin ingin keluar?',
-            text: "Sesi Anda akan berakhir!",
+            text: "Sampai jumpa lagi!",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
-            confirmButtonText: 'Ya, Keluar!',
-            cancelButtonText: 'Batal'
+            confirmButtonText: 'Ya, Keluar!'
         }).then((result) => {
             if (result.isConfirmed) {
-                // Submit form berdasarkan ID yang dikirim
                 document.getElementById(formId).submit();
             }
         })

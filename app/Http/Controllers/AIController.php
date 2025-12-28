@@ -49,34 +49,59 @@ class AIController extends Controller
     // 3. LOGIKA ANALISIS SENTIMEN PER BUKU
     public function analyzeSentiment($id)
     {
-        // Cari buku milik user
+        // 1. Debug: Cek apakah ID buku masuk
+        // dd("Masuk fungsi analyze dengan ID: " . $id); 
+
         $book = Book::where('user_id', auth()->id())->findOrFail($id);
 
-        // Cek apakah ada catatan
         if (empty($book->notes)) {
-            return back()->with('error', 'Isi catatan/ulasan buku terlebih dahulu untuk dianalisis.');
+            return back()->with('error', 'Isi catatan/ulasan buku terlebih dahulu.');
         }
 
-        // Siapkan Prompt
         $apiKey = env('GEMINI_API_KEY');
-        $prompt = "Analisis sentimen dari ulasan buku berikut: \"{$book->notes}\". "
-                . "Jawab HANYA dengan satu kata: POSITIF, NETRAL, atau NEGATIF. Jangan ada kata lain.";
+        
+        // 2. Debug: Pastikan API Key terbaca (JANGAN TAMPILKAN INI KE ORANG LAIN)
+        if (empty($apiKey)) {
+            dd("ERROR: API Key tidak terbaca dari .env. Cek file .env Anda!");
+        }
+
+        // Gunakan model yang stabil: gemini-1.5-flash
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
+
+        $prompt = "Analisis sentimen dari teks ini: \"{$book->notes}\". "
+                . "Jawab HANYA satu kata: POSITIF, NETRAL, atau NEGATIF.";
 
         try {
             $response = Http::withHeaders(['Content-Type' => 'application/json'])
-                ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}", [
+                ->post($url, [
                     'contents' => [
                         ['parts' => [['text' => $prompt]]]
                     ]
                 ]);
-            
-            $result = $response->json();
-            
-            $sentiment = $result['candidates'][0]['content']['parts'][0]['text'] ?? 'NETRAL';
-            $sentiment = strtoupper(trim(str_replace(["\n", "\r", "*", "."], '', $sentiment)));
 
+            $result = $response->json();
+
+            // 3. DEBUGGING UTAMA: 
+            // Hapus tanda komentar (//) pada baris di bawah ini untuk melihat respon asli Google
+            // dd($result); 
+
+            // Cek jika Google memberikan Error
+            if (isset($result['error'])) {
+                // Tampilkan error spesifik di layar
+                dd("Google Error:", $result['error']); 
+            }
+
+            // Ambil jawaban
+            $sentiment = $result['candidates'][0]['content']['parts'][0]['text'] ?? 'NETRAL';
+            
+            // Bersihkan format (kadang AI menjawab "Sentimen: Positif", kita ambil kata kuncinya saja)
+            $sentiment = strtoupper(trim(str_replace(["\n", "\r", "*", "."], '', $sentiment)));
+            
+            // Fallback jika AI meracau
             if (!in_array($sentiment, ['POSITIF', 'NETRAL', 'NEGATIF'])) {
-                $sentiment = 'NETRAL';
+                // Debugging jika jawaban aneh
+                // dd("Jawaban AI aneh: " . $sentiment); 
+                $sentiment = 'NETRAL'; 
             }
 
             $book->update(['sentiment' => $sentiment]);
@@ -84,7 +109,8 @@ class AIController extends Controller
             return back()->with('success', 'Analisis sentimen berhasil: ' . $sentiment);
 
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal terhubung ke AI: ' . $e->getMessage());
+            // Tampilkan error koneksi
+            dd("Exception Error: " . $e->getMessage());
         }
     }
 }
