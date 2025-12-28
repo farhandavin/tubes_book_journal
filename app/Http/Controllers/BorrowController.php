@@ -33,7 +33,7 @@ class BorrowController extends Controller
         Borrowing::create([
             'user_id' => Auth::id(),
             'book_id' => $id,
-            'borrow_date' => now(),
+            'borrowed_at' => now(),
             'status' => 'pending', // <-- Status awal pending
         ]);
 
@@ -50,7 +50,7 @@ class BorrowController extends Controller
         }
 
         // Update status
-        $borrowing->update(['status' => 'dikembalikan', 'return_date' => now()]);
+        $borrowing->update(['status' => 'dikembalikan', 'returned_at' => now()]);
 
         // Kembalikan Stok Buku
         $book = Book::find($borrowing->book_id);
