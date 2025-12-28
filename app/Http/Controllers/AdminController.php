@@ -8,6 +8,7 @@ use App\Models\Borrowing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule; // <--- PENTING: Tambahkan ini untuk validasi unique email saat edit
 
 class AdminController extends Controller
 {
@@ -48,6 +49,34 @@ class AdminController extends Controller
         return redirect()->route('admin.users')->with('success', 'User berhasil ditambahkan.');
     }
 
+    // [BARU] Form Edit User
+    public function editUser($id)
+    {
+        $user = User::findOrFail($id);
+        return view('admin.edit_user', compact('user'));
+    }
+
+    // [BARU] Proses Update User
+    public function updateUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            // Validasi email unik, tapi abaikan (ignore) email milik user ini sendiri
+            'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+            'role' => 'required|in:user,admin',
+        ]);
+
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'role' => $request->role,
+        ]);
+
+        return redirect()->route('admin.users')->with('success', 'Data user berhasil diperbarui.');
+    }
+
     // Hapus user
     public function destroy(User $user)
     {
@@ -83,7 +112,7 @@ class AdminController extends Controller
         return view('admin.borrowings', compact('borrowings'));
     }
 
-    // UPDATE: Logika Approve Peminjaman (Versi Baru)
+    // Logika Approve Peminjaman
     public function approveBorrow($id) 
     {
         $loan = Borrowing::findOrFail($id);
@@ -99,7 +128,7 @@ class AdminController extends Controller
         return back()->with('error', 'Stok buku habis!');
     }
 
-    // UPDATE: Logika Reject Peminjaman (Versi Baru)
+    // Logika Reject Peminjaman
     public function rejectBorrow($id) 
     {
         Borrowing::findOrFail($id)->update(['status' => 'ditolak']);

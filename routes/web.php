@@ -7,7 +7,7 @@ use App\Http\Controllers\AIController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BorrowController;
 use App\Http\Controllers\EventController;
-use App\Http\Controllers\ReviewController; // <--- 1. Tambahkan Import ReviewController
+use App\Http\Controllers\ReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,7 +55,7 @@ Route::middleware(['auth'])->group(function () {
     // 5. Route Events (User View)
     Route::get('/events', [EventController::class, 'index'])->name('events.index');
 
-    // 6. Route Reviews (Ulasan Buku) - <--- 2. Ditambahkan di sini
+    // 6. Route Reviews (Ulasan Buku)
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 });
 
@@ -72,8 +72,12 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\IsAdmin::class])
         Route::get('/users', [AdminController::class, 'index'])->name('users');
         Route::get('/users/create', [AdminController::class, 'createUser'])->name('users.create');
         Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');
+        
+        // [BARU] Route Edit User
+        Route::get('/users/{id}/edit', [AdminController::class, 'editUser'])->name('users.edit');
+        Route::put('/users/{id}', [AdminController::class, 'updateUser'])->name('users.update');
+
         Route::delete('/users/{user}', [AdminController::class, 'destroy'])->name('users.destroy');
-        // (Opsional: Jika ada fitur reset password admin, tambahkan di sini)
         Route::patch('/users/{user}/reset-password', [AdminController::class, 'resetPassword'])->name('users.reset-password');
 
         // C. Manajemen Peminjaman (Borrowing Management)
@@ -82,8 +86,12 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\IsAdmin::class])
         Route::patch('/borrowings/{id}/reject', [AdminController::class, 'rejectBorrow'])->name('borrowings.reject');
 
         // D. Manajemen Events (Admin CRUD)
-        // URL otomatis menjadi /admin/events karena prefix group
         Route::post('/events', [EventController::class, 'store'])->name('events.store');
+
+        // [BARU] Route Edit Event
+        Route::get('/events/{id}/edit', [EventController::class, 'edit'])->name('events.edit');
+        Route::put('/events/{id}', [EventController::class, 'update'])->name('events.update');
+
         Route::delete('/events/{id}', [EventController::class, 'destroy'])->name('events.delete');
 
         // E. Export Laporan Admin

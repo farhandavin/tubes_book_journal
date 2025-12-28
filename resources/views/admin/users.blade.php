@@ -49,20 +49,29 @@
                             @if($user->id != auth()->id())
                                 <div style="display: flex; gap: 5px;">
                                     
+                                    {{-- 1. TOMBOL EDIT (BARU) --}}
+                                    <a href="{{ route('admin.users.edit', $user->id) }}" 
+                                       style="background: #36b9cc; color: white; padding: 5px 10px; text-decoration: none; border-radius: 4px; font-size: 0.9rem; line-height: 1.5;" 
+                                       title="Edit User">
+                                       Edit
+                                    </a>
+
+                                    {{-- 2. TOMBOL RESET PASSWORD --}}
                                     <form action="{{ route('admin.users.reset-password', $user->id) }}" method="POST" onsubmit="return confirm('Reset password user ini menjadi default?')">
                                         @csrf
                                         @method('PATCH')
-                                        <button type="submit" style="background: #f6c23e; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;" title="Reset Password">
+                                        <button type="submit" style="background: #f6c23e; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; font-size: 0.9rem;" title="Reset Password">
                                             Reset
                                         </button>
                                     </form>
 
+                                    {{-- 3. TOMBOL HAPUS --}}
                                     <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST"
                                         onsubmit="return confirm('Yakin hapus user ini?')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                            style="background: #e74a3b; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;" title="Hapus User">
+                                            style="background: #e74a3b; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; font-size: 0.9rem;" title="Hapus User">
                                             Hapus
                                         </button>
                                     </form>
@@ -75,5 +84,10 @@
                 @endforeach
             </tbody>
         </table>
+        
+        {{-- Pagination (Jika diperlukan) --}}
+        <div style="margin-top: 20px;">
+            {{ $users->links() }}
+        </div>
     </div>
 @endsection
