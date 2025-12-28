@@ -6,7 +6,8 @@ use App\Http\Controllers\BookController;
 use App\Http\Controllers\AIController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BorrowController;
-use App\Http\Controllers\EventController; // <--- 1. Tambahkan Import EventController
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\ReviewController; // <--- 1. Tambahkan Import ReviewController
 
 /*
 |--------------------------------------------------------------------------
@@ -51,8 +52,11 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // 5. Route Events (User View) - <--- 2. Ditambahkan di sini
+    // 5. Route Events (User View)
     Route::get('/events', [EventController::class, 'index'])->name('events.index');
+
+    // 6. Route Reviews (Ulasan Buku) - <--- 2. Ditambahkan di sini
+    Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 });
 
 // --- Group Middleware Admin (Akses Khusus Admin) ---
@@ -77,7 +81,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\IsAdmin::class])
         Route::patch('/borrowings/{id}/approve', [AdminController::class, 'approveBorrow'])->name('borrowings.approve');
         Route::patch('/borrowings/{id}/reject', [AdminController::class, 'rejectBorrow'])->name('borrowings.reject');
 
-        // D. Manajemen Events (Admin CRUD) - <--- 3. Ditambahkan di sini
+        // D. Manajemen Events (Admin CRUD)
         // URL otomatis menjadi /admin/events karena prefix group
         Route::post('/events', [EventController::class, 'store'])->name('events.store');
         Route::delete('/events/{id}', [EventController::class, 'destroy'])->name('events.delete');

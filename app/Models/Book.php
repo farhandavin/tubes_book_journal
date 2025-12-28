@@ -34,6 +34,17 @@ class Book extends Model
         return $this->borrowings()->where('status', 'dipinjam')->exists();
     }
 
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    // Menghitung rata-rata rating otomatis
+    public function getAverageRatingAttribute()
+    {
+        return $this->reviews()->avg('rating') ?? 0;
+    }
+
     // Casting agar date_read dibaca sebagai format tanggal oleh Carbon
     protected $casts = [
         'date_read' => 'date',
