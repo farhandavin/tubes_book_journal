@@ -95,7 +95,8 @@
                                 <div class="grid grid-cols-2 gap-2">
                                     <a href="{{ route('book.edit', $book->id) }}" class="text-center py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-colors">Edit</a>
                                     <form action="{{ route('book.delete', $book->id) }}" method="POST" class="w-full">
-                                        @csrf 
+                                        @csrf
+                                        @method('DELETE') 
                                         <button type="submit" class="w-full py-2 px-3 bg-red-50 hover:bg-red-100 text-red-600 text-xs rounded-lg transition-colors" onclick="return confirm('Hapus?')">Hapus</button>
                                     </form>
                                 </div>

@@ -31,9 +31,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/add', [BookController::class, 'store'])->name('book.store');
     Route::post('/search', [BookController::class, 'searchApi'])->name('book.search');
 
+    // [UPDATED] Menggunakan PUT dan DELETE sesuai form edit/hapus
     Route::get('/edit/{id}', [BookController::class, 'editForm'])->name('book.edit');
-    Route::post('/edit/{id}', [BookController::class, 'update'])->name('book.update');
-    Route::post('/delete/{id}', [BookController::class, 'destroy'])->name('book.delete');
+    Route::put('/edit/{id}', [BookController::class, 'update'])->name('book.update');
+    Route::delete('/delete/{id}', [BookController::class, 'destroy'])->name('book.delete');
 
     Route::get('/export-csv', [BookController::class, 'exportCsv'])->name('book.export');
 
@@ -61,8 +62,8 @@ Route::middleware(['auth'])->group(function () {
 
 // --- Group Middleware Admin (Akses Khusus Admin) ---
 Route::middleware(['auth', 'verified', \App\Http\Middleware\IsAdmin::class])
-    ->prefix('admin') 
-    ->name('admin.')  
+    ->prefix('admin')
+    ->name('admin.')
     ->group(function () {
 
         // A. Dashboard Khusus Admin
@@ -72,8 +73,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\IsAdmin::class])
         Route::get('/users', [AdminController::class, 'index'])->name('users');
         Route::get('/users/create', [AdminController::class, 'createUser'])->name('users.create');
         Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');
-        
-        // [BARU] Route Edit User
+
+        // Route Edit User
         Route::get('/users/{id}/edit', [AdminController::class, 'editUser'])->name('users.edit');
         Route::put('/users/{id}', [AdminController::class, 'updateUser'])->name('users.update');
 
@@ -88,7 +89,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\IsAdmin::class])
         // D. Manajemen Events (Admin CRUD)
         Route::post('/events', [EventController::class, 'store'])->name('events.store');
 
-        // [BARU] Route Edit Event
+        // Route Edit Event
         Route::get('/events/{id}/edit', [EventController::class, 'edit'])->name('events.edit');
         Route::put('/events/{id}', [EventController::class, 'update'])->name('events.update');
 
