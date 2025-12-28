@@ -6,6 +6,7 @@ use App\Http\Controllers\BookController;
 use App\Http\Controllers\AIController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BorrowController;
+use App\Http\Controllers\EventController; // <--- 1. Tambahkan Import EventController
 
 /*
 |--------------------------------------------------------------------------
@@ -40,7 +41,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/ai-recommendation', [AIController::class, 'index'])->name('ai.index');
     Route::post('/ai-recommendation', [AIController::class, 'askAI'])->name('ai.ask');
 
-    // 3. Route Peminjaman (Borrow)
+    // 3. Route Peminjaman (Sisi User)
     Route::post('/book/{id}/borrow', [BorrowController::class, 'borrow'])->name('book.borrow');
     Route::post('/borrowing/{id}/return', [BorrowController::class, 'returnBook'])->name('borrow.return');
     Route::get('/my-books', [BorrowController::class, 'myBooks'])->name('my.books');
@@ -49,6 +50,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // 5. Route Events (User View) - <--- 2. Ditambahkan di sini
+    Route::get('/events', [EventController::class, 'index'])->name('events.index');
 });
 
 // --- Group Middleware Admin (Akses Khusus Admin) ---
@@ -57,18 +61,28 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\IsAdmin::class])
     ->name('admin.')  
     ->group(function () {
 
-        // Dashboard Khusus Admin
+        // A. Dashboard Khusus Admin
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 
-        // Manajemen User (CRUD Admin)
+        // B. Manajemen User (CRUD Admin)
         Route::get('/users', [AdminController::class, 'index'])->name('users');
         Route::get('/users/create', [AdminController::class, 'createUser'])->name('users.create');
         Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');
-        
-        // Menggunakan users.destroy agar lebih deskriptif
-        Route::delete('/users/{id}', [AdminController::class, 'destroy'])->name('users.destroy');
+        Route::delete('/users/{user}', [AdminController::class, 'destroy'])->name('users.destroy');
+        // (Opsional: Jika ada fitur reset password admin, tambahkan di sini)
+        Route::patch('/users/{user}/reset-password', [AdminController::class, 'resetPassword'])->name('users.reset-password');
 
-        // Export Laporan Admin
+        // C. Manajemen Peminjaman (Borrowing Management)
+        Route::get('/borrowings', [AdminController::class, 'borrowings'])->name('borrowings.index');
+        Route::patch('/borrowings/{id}/approve', [AdminController::class, 'approveBorrow'])->name('borrowings.approve');
+        Route::patch('/borrowings/{id}/reject', [AdminController::class, 'rejectBorrow'])->name('borrowings.reject');
+
+        // D. Manajemen Events (Admin CRUD) - <--- 3. Ditambahkan di sini
+        // URL otomatis menjadi /admin/events karena prefix group
+        Route::post('/events', [EventController::class, 'store'])->name('events.store');
+        Route::delete('/events/{id}', [EventController::class, 'destroy'])->name('events.delete');
+
+        // E. Export Laporan Admin
         Route::get('/export/users', [AdminController::class, 'exportUsers'])->name('export.users');
         Route::get('/export/books', [AdminController::class, 'exportBooks'])->name('export.books');
     });

@@ -7,28 +7,28 @@ use App\Models\Book;
 use App\Models\Borrowing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
-    // --- MANAJEMEN USER ---
+    // ==========================================
+    // 1. MANAJEMEN USER
+    // ==========================================
 
-    // Tampilkan daftar user (dengan Pagination & Filter Self)
+    // Tampilkan daftar user
     public function index()
     {
-        // Ambil semua user, KECUALI admin yang sedang login
-        // Menggunakan pagination 10 per halaman
         $users = User::where('id', '!=', auth()->id())->paginate(10);
-
         return view('admin.users', compact('users'));
     }
 
-    // Form Tambah User (Baru)
+    // Form Tambah User
     public function createUser()
     {
         return view('admin.create_user');
     }
 
-    // Simpan User Baru (Baru)
+    // Simpan User Baru
     public function storeUser(Request $request)
     {
         $request->validate([
@@ -48,61 +48,97 @@ class AdminController extends Controller
         return redirect()->route('admin.users')->with('success', 'User berhasil ditambahkan.');
     }
 
-    // Hapus user (Menggabungkan keamanan & kebersihan kode)
+    // Hapus user
     public function destroy(User $user)
     {
-        // Cek keamanan: Admin tidak boleh menghapus dirinya sendiri
         if ($user->id == auth()->id()) {
             return back()->with('error', 'Anda tidak bisa menghapus akun sendiri saat sedang login.');
         }
 
-        // Proses hapus
         $user->delete();
-
         return back()->with('success', 'User berhasil dihapus.');
     }
 
-    // --- DASHBOARD & LAPORAN ---
+    // Reset Password User
+    public function resetPassword(User $user)
+    {
+        $user->update([
+            'password' => Hash::make('password123') // Password default
+        ]);
+
+        return back()->with('success', 'Password user ' . $user->name . ' telah direset menjadi: password123');
+    }
+
+    // ==========================================
+    // 2. MANAJEMEN PEMINJAMAN (BORROWING)
+    // ==========================================
+
+    public function borrowings()
+    {
+        // Eager loading 'user' dan 'book' untuk menghemat query (N+1 Problem)
+        $borrowings = Borrowing::with(['user', 'book'])
+                        ->orderBy('created_at', 'desc')
+                        ->paginate(10);
+                        
+        return view('admin.borrowings', compact('borrowings'));
+    }
+
+    // UPDATE: Logika Approve Peminjaman (Versi Baru)
+    public function approveBorrow($id) 
+    {
+        $loan = Borrowing::findOrFail($id);
+        $book = $loan->book;
+
+        if ($book->stock > 0) {
+            $book->decrement('stock');
+            $loan->update(['status' => 'dipinjam']);
+            
+            return back()->with('success', 'Peminjaman disetujui!');
+        }
+        
+        return back()->with('error', 'Stok buku habis!');
+    }
+
+    // UPDATE: Logika Reject Peminjaman (Versi Baru)
+    public function rejectBorrow($id) 
+    {
+        Borrowing::findOrFail($id)->update(['status' => 'ditolak']);
+        
+        return back()->with('success', 'Peminjaman ditolak.');
+    }
+
+    // ==========================================
+    // 3. DASHBOARD & LAPORAN
+    // ==========================================
 
     public function dashboard()
     {
         $totalUsers = User::count();
         $totalBooks = Book::count();
-        // Menghitung peminjaman yang statusnya 'dipinjam'
         $activeLoans = Borrowing::where('status', 'dipinjam')->count();
         
         return view('admin.dashboard', compact('totalUsers', 'totalBooks', 'activeLoans'));
     }
 
-    // 1. Export Data User ke CSV
     public function exportUsers()
     {
         $users = User::all();
         $filename = "laporan_user_" . date('Y-m-d') . ".csv";
         
         $handle = fopen('php://output', 'w');
-        
         header('Content-Type: text/csv');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         
-        // Header Kolom CSV
         fputcsv($handle, ['ID', 'Nama', 'Email', 'Role', 'Tanggal Bergabung']); 
         
         foreach ($users as $user) {
-            fputcsv($handle, [
-                $user->id, 
-                $user->name, 
-                $user->email, 
-                $user->role, 
-                $user->created_at
-            ]);
+            fputcsv($handle, [$user->id, $user->name, $user->email, $user->role, $user->created_at]);
         }
         
         fclose($handle);
         exit;
     }
 
-    // 2. Export Data Buku ke CSV
     public function exportBooks()
     {
         $books = Book::all();
@@ -119,7 +155,7 @@ class AdminController extends Controller
                 $book->id,
                 $book->title,
                 $book->author,
-                $book->category ?? '-', // Menggunakan '??' untuk mencegah error jika kolom kosong
+                $book->category ?? '-',
                 $book->year,
                 $book->stock ?? '0'
             ]);

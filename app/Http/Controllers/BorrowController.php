@@ -2,57 +2,70 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Book;
 use App\Models\Borrowing;
-use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class BorrowController extends Controller
 {
-    // Aksi Meminjam Buku
-    public function borrow($bookId)
+    // User Request Peminjaman
+    public function borrow(Request $request, $id)
     {
-        $book = Book::findOrFail($bookId);
+        $book = Book::findOrFail($id);
 
-        // Cek apakah buku sedang dipinjam orang lain
-        if ($book->isBorrowed()) {
-            return back()->with('error', 'Buku ini sedang dipinjam orang lain.');
+        // 1. Cek Stok (Minimal ada 1)
+        if ($book->stock < 1) {
+            return back()->with('error', 'Stok buku habis!');
         }
 
+        // 2. Cek apakah user sedang meminjam buku yang SAMA (Pending/Dipinjam)
+        $existing = Borrowing::where('user_id', Auth::id())
+                    ->where('book_id', $id)
+                    ->whereIn('status', ['pending', 'dipinjam'])
+                    ->exists();
+
+        if ($existing) {
+            return back()->with('error', 'Anda sudah meminjam atau me-request buku ini.');
+        }
+
+        // 3. Buat Data Peminjaman (Status Pending)
         Borrowing::create([
-            'user_id' => auth()->id(),
-            'book_id' => $bookId,
-            'borrowed_at' => Carbon::now(),
-            'status' => 'dipinjam'
+            'user_id' => Auth::id(),
+            'book_id' => $id,
+            'borrow_date' => now(),
+            'status' => 'pending', // <-- Status awal pending
         ]);
 
-        return back()->with('success', 'Buku berhasil dipinjam! Selamat membaca.');
+        return back()->with('success', 'Permintaan peminjaman berhasil dikirim. Tunggu persetujuan Admin.');
     }
 
-    // Aksi Mengembalikan Buku
+    // User Mengembalikan Buku
     public function returnBook($id)
     {
-        // Cari data peminjaman milik user yang login
-        $borrowing = Borrowing::where('user_id', auth()->id())
-                              ->where('id', $id)
-                              ->where('status', 'dipinjam')
-                              ->firstOrFail();
+        $borrowing = Borrowing::where('user_id', Auth::id())->where('id', $id)->firstOrFail();
 
-        $borrowing->update([
-            'status' => 'dikembalikan',
-            'returned_at' => Carbon::now()
-        ]);
+        if ($borrowing->status !== 'dipinjam') {
+            return back()->with('error', 'Buku ini belum disetujui atau sudah dikembalikan.');
+        }
+
+        // Update status
+        $borrowing->update(['status' => 'dikembalikan', 'return_date' => now()]);
+
+        // Kembalikan Stok Buku
+        $book = Book::find($borrowing->book_id);
+        $book->increment('stock');
 
         return back()->with('success', 'Buku berhasil dikembalikan.');
     }
 
-    // Halaman Daftar Buku yang Sedang Saya Pinjam
+    // Halaman Buku Saya
     public function myBooks()
     {
-        $borrowings = Borrowing::with('book')
-                               ->where('user_id', auth()->id())
-                               ->orderBy('created_at', 'desc')
-                               ->get();
+        $borrowings = Borrowing::where('user_id', Auth::id())
+                        ->with('book')
+                        ->orderBy('created_at', 'desc')
+                        ->get();
 
         return view('borrowings.index', compact('borrowings'));
     }

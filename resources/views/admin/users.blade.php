@@ -44,17 +44,29 @@
                             </span>
                         </td>
                         <td style="padding: 10px;">{{ $user->created_at->format('d M Y') }}</td>
+                        
                         <td style="padding: 10px;">
                             @if($user->id != auth()->id())
-                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST"
-                                    onsubmit="return confirm('Yakin hapus user ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                        style="background: #e74a3b; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;">
-                                        Hapus
-                                    </button>
-                                </form>
+                                <div style="display: flex; gap: 5px;">
+                                    
+                                    <form action="{{ route('admin.users.reset-password', $user->id) }}" method="POST" onsubmit="return confirm('Reset password user ini menjadi default?')">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" style="background: #f6c23e; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;" title="Reset Password">
+                                            Reset
+                                        </button>
+                                    </form>
+
+                                    <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST"
+                                        onsubmit="return confirm('Yakin hapus user ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            style="background: #e74a3b; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;" title="Hapus User">
+                                            Hapus
+                                        </button>
+                                    </form>
+                                </div>
                             @else
                                 <span style="color: grey; font-style: italic;">(Anda)</span>
                             @endif

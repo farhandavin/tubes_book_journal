@@ -17,7 +17,9 @@ class Book extends Model
         'rating',
         'notes',
         'date_read',
-        'sentiment'
+        'sentiment',
+        'stock',         // Tambahkan jika belum ada
+        'cover_image'
     ];
 
     // Relasi ke peminjaman
@@ -31,7 +33,7 @@ class Book extends Model
     {
         return $this->borrowings()->where('status', 'dipinjam')->exists();
     }
-    
+
     // Casting agar date_read dibaca sebagai format tanggal oleh Carbon
     protected $casts = [
         'date_read' => 'date',

@@ -5,25 +5,23 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Book;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage; // 1. Penting: Import Storage
 
 class BookController extends Controller
 {
-    // MENAMPILKAN DASHBOARD DENGAN FILTER KATEGORI
-   public function index(Request $request)
+    // --- MENAMPILKAN DASHBOARD ---
+    public function index(Request $request)
     {
-        // ... (Kode sorting & filter kategori di atas TETAP SAMA, jangan dihapus) ...
         $sortOption = $request->query('sort', 'id');
         $categoryFilter = $request->query('category');
         $order = 'DESC';
         $column = 'id';
         
-        // ... (Logika if/else sorting TETAP SAMA) ...
         if ($sortOption === 'rating') { $column = 'rating'; } 
         elseif ($sortOption === 'date') { $column = 'date_read'; } 
         elseif ($sortOption === 'title') { $column = 'title'; $order = 'ASC'; }
 
-        // PERUBAHAN DI SINI:
-        // Hapus "where('user_id', auth()->id())" agar menampilkan SEMUA buku
+        // Menampilkan SEMUA buku (sesuai request sebelumnya)
         $query = Book::query(); 
 
         if ($categoryFilter) {
@@ -31,26 +29,19 @@ class BookController extends Controller
         }
 
         $books = $query->orderBy($column, $order)->get();
-
-        // Ambil kategori dari semua buku
         $categories = Book::whereNotNull('category')->distinct()->pluck('category');
 
         return view('index', compact('books', 'categories'));
     }
+
     public function addForm()
     {
         return view('add', ['results' => null]);
     }
 
+    // --- SEARCH API (OPENLIBRARY) ---
     public function searchApi(Request $request)
     {
-        // ... (Kode searchApi TETAP SAMA seperti sebelumnya, tidak perlu diubah) ...
-        // Agar kode tidak kepanjangan di chat, biarkan bagian searchApi ini seperti kode lama Anda.
-
-        // Cukup pastikan return view-nya tetap sama:
-        // return view('add', ['results' => $results]);
-
-        // --- SEMENTARA SAYA COPY ULANG BAGIAN INI AGAR ANDA BISA LANGSUNG PASTE FULL FILE ---
         $query = $request->input('query');
         $results = [];
 
@@ -80,66 +71,99 @@ class BookController extends Controller
                 ];
             }
         } catch (\Exception $e) {
+            // Handle error silent
         }
 
         return view('add', ['results' => $results]);
     }
 
-    // SIMPAN BUKU (UPDATE: Tambah Category)
+    // --- STORE (SIMPAN BUKU BARU) ---
     public function store(Request $request)
     {
+        // 2. Validasi digabung (Data buku + Gambar + Stok)
         $request->validate([
             'title' => 'required',
+            'author' => 'required',
             'rating' => 'required|numeric|min:1|max:10',
-            'category' => 'nullable|string|max:50', // Validasi kategori
+            'stock' => 'required|integer|min:0', // Validasi Stok
+            'category' => 'nullable|string|max:50',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // Validasi Gambar
         ]);
 
-        Book::create([
+        // Siapkan data dasar
+        $data = [
             'user_id' => auth()->id(),
             'title' => $request->title,
             'author' => $request->author,
-            'category' => $request->category, // <--- Simpan Kategori
+            'category' => $request->category,
             'isbn' => $request->isbn,
             'rating' => $request->rating,
+            'stock' => $request->stock, // Simpan Stok
             'notes' => $request->notes,
             'date_read' => $request->date_read ?: null,
-        ]);
+        ];
+
+        // 3. Logika Upload Gambar Baru
+        if ($request->hasFile('cover_image')) {
+            $data['cover_image'] = $request->file('cover_image')->store('covers', 'public');
+        }
+
+        Book::create($data);
 
         return redirect()->route('home')->with('success', 'Buku berhasil ditambahkan!');
     }
 
     public function editForm($id)
     {
+        // Menggunakan where user_id agar user hanya bisa edit buku miliknya sendiri
         $book = Book::where('user_id', auth()->id())->findOrFail($id);
         return view('edit', compact('book'));
     }
 
-    // UPDATE BUKU (UPDATE: Tambah Category)
+    // --- UPDATE BUKU ---
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'rating' => 'required|numeric|min:1|max:10',
-            'category' => 'nullable|string|max:50',
-        ]);
-
         $book = Book::where('user_id', auth()->id())->findOrFail($id);
 
-        $book->update([
-            'rating' => $request->rating,
-            'notes' => $request->notes,
-            'category' => $request->category, // <--- Update Kategori
-            'date_read' => $request->date_read ?: null,
+        // 4. Validasi Update
+        $request->validate([
+            'title' => 'required',
+            'author' => 'required',
+            'rating' => 'required|numeric|min:1|max:10',
+            'stock' => 'required|integer|min:0',
+            'category' => 'nullable|string|max:50',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        return redirect()->route('home');
+        $data = [
+            'title' => $request->title,
+            'author' => $request->author,
+            'rating' => $request->rating,
+            'stock' => $request->stock,
+            'category' => $request->category,
+            'notes' => $request->notes,
+            'date_read' => $request->date_read ?: null,
+        ];
+
+        // 5. Logika Ganti Gambar (Hapus lama, Upload baru)
+        if ($request->hasFile('cover_image')) {
+            // Hapus gambar lama dari storage jika ada
+            if ($book->cover_image) {
+                Storage::disk('public')->delete($book->cover_image);
+            }
+            // Simpan gambar baru
+            $data['cover_image'] = $request->file('cover_image')->store('covers', 'public');
+        }
+
+        $book->update($data);
+
+        return redirect()->route('home')->with('success', 'Buku berhasil diperbarui.');
     }
 
-   public function exportCsv()
+    // --- EXPORT CSV ---
+    public function exportCsv()
     {
-        // Admin export semua buku, User biasa export buku yang mereka buat/miliki (jika ada)
-        // Atau kita set agar export ini mendownload seluruh katalog perpustakaan
         $books = Book::all(); 
-        
         $csvFileName = 'laporan-perpustakaan-' . date('Y-m-d') . '.csv';
 
         $headers = [
@@ -153,22 +177,22 @@ class BookController extends Controller
         $callback = function () use ($books) {
             $file = fopen('php://output', 'w');
             
-            // Header Kolom CSV
-            fputcsv($file, ['ID', 'Judul', 'Penulis', 'Kategori', 'ISBN', 'Rating', 'Sentimen AI', 'Status', 'Catatan']);
+            // Header CSV (Saya tambahkan kolom Stok)
+            fputcsv($file, ['ID', 'Judul', 'Penulis', 'Kategori', 'ISBN', 'Stok', 'Rating', 'Sentimen AI', 'Status', 'Catatan']);
 
             foreach ($books as $book) {
-                // Cek status peminjaman
                 $status = $book->isBorrowed() ? 'Sedang Dipinjam' : 'Tersedia';
 
                 fputcsv($file, [
                     $book->id,
                     $book->title,
                     $book->author,
-                    $book->category ?? '-',    // Kolom Kategori
+                    $book->category ?? '-',
                     $book->isbn,
+                    $book->stock, // Export stok juga
                     $book->rating,
-                    $book->sentiment ?? '-',   // Kolom Sentimen
-                    $status,                   // Status Peminjaman
+                    $book->sentiment ?? '-',
+                    $status,
                     $book->notes
                 ]);
             }
@@ -178,10 +202,17 @@ class BookController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    // --- HAPUS BUKU ---
     public function destroy($id)
     {
         $book = Book::where('user_id', auth()->id())->where('id', $id)->first();
+        
         if ($book) {
+            // 6. Hapus gambar fisik saat buku dihapus (Kebersihan Server)
+            if ($book->cover_image) {
+                Storage::disk('public')->delete($book->cover_image);
+            }
+            
             $book->delete();
         }
         return redirect()->route('home');

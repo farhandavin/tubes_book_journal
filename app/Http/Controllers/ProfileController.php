@@ -6,14 +6,15 @@ use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB; // Tambahkan ini
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage; // Import Storage Facade
 use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile form.
+     * Menampilkan form profil user (beserta riwayat sesi).
      */
     public function edit(Request $request): View
     {
@@ -51,28 +52,46 @@ class ProfileController extends Controller
 
         return view('profile.edit', [
             'user' => $request->user(),
-            'sessions' => $sessions, // Data sesi dikirim ke sini
+            'sessions' => $sessions,
         ]);
     }
 
     /**
-     * Update the user's profile information.
+     * Memperbarui informasi profil (termasuk Foto Profil).
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        
+        // Isi data dari request yang sudah divalidasi
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        // LOGIKA FOTO PROFIL
+        if ($request->hasFile('profile_photo')) {
+            // 1. Hapus foto lama dari storage jika ada
+            if ($user->profile_photo) {
+                Storage::disk('public')->delete($user->profile_photo);
+            }
+            
+            // 2. Simpan foto baru ke folder 'profile_photos' di disk public
+            $path = $request->file('profile_photo')->store('profile_photos', 'public');
+            
+            // 3. Simpan path-nya ke database
+            $user->profile_photo = $path;
         }
 
-        $request->user()->save();
+        // Reset verifikasi email jika email diubah
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
     /**
-     * Delete the user's account.
+     * Menghapus akun user.
      */
     public function destroy(Request $request): RedirectResponse
     {
@@ -83,6 +102,11 @@ class ProfileController extends Controller
         $user = $request->user();
 
         Auth::logout();
+
+        // Opsional: Hapus foto profil dari storage saat akun dihapus
+        if ($user->profile_photo) {
+            Storage::disk('public')->delete($user->profile_photo);
+        }
 
         $user->delete();
 
