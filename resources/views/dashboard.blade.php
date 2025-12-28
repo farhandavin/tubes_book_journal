@@ -2,14 +2,15 @@
 
 @section('content')
 <div class="space-y-6">
-    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-800">Selamat Datang, {{ Auth::user()->name }}! 👋</h1>
-            <p class="text-gray-500 mt-2">Senang melihat Anda kembali di BookJournal. Apa rencana bacaan Anda hari ini?</p>
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 rounded-xl shadow-lg flex flex-col md:flex-row md:items-center md:justify-between">
+        <div class="text-white">
+            <h1 class="text-3xl font-bold">Selamat Datang, {{ Auth::user()->name }}! 👋</h1>
+            <p class="mt-2 text-indigo-100">Senang melihat Anda kembali di BookJournal. Apa rencana bacaan Anda hari ini?</p>
         </div>
-        <div class="hidden md:block">
-            <a href="{{ route('book.add') }}" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition shadow-md">
-                + Tambah Koleksi Baru
+        <div class="mt-4 md:mt-0">
+            <a href="{{ route('book.add') }}" class="inline-flex items-center bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-indigo-50 transition shadow-md">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Tambah Koleksi Baru
             </a>
         </div>
     </div>

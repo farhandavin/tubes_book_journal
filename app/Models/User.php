@@ -47,4 +47,28 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Get all books owned by the user.
+     */
+    public function books()
+    {
+        return $this->hasMany(Book::class);
+    }
+
+    /**
+     * Get all borrowings by the user.
+     */
+    public function borrowings()
+    {
+        return $this->hasMany(Borrowing::class);
+    }
+
+    /**
+     * Get all reviews by the user.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
 }

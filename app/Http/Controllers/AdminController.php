@@ -177,7 +177,7 @@ class AdminController extends Controller
         header('Content-Type: text/csv');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
 
-        fputcsv($handle, ['ID', 'Judul', 'Penulis', 'Kategori', 'Tahun', 'Stok']);
+        fputcsv($handle, ['ID', 'Judul', 'Penulis', 'Kategori', 'Tahun Baca', 'Stok']);
 
         foreach ($books as $book) {
             fputcsv($handle, [
@@ -185,7 +185,7 @@ class AdminController extends Controller
                 $book->title,
                 $book->author,
                 $book->category ?? '-',
-                $book->year,
+                $book->date_read?->format('Y') ?? '-',
                 $book->stock ?? '0'
             ]);
         }

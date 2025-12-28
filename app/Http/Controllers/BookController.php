@@ -115,15 +115,29 @@ class BookController extends Controller
 
     public function editForm($id)
     {
-        // Menggunakan where user_id agar user hanya bisa edit buku miliknya sendiri
-        $book = Book::where('user_id', auth()->id())->findOrFail($id);
+        $user = auth()->user();
+        
+        // Admin bisa edit semua buku, user biasa hanya bisa edit buku miliknya
+        if ($user->role === 'admin') {
+            $book = Book::findOrFail($id);
+        } else {
+            $book = Book::where('user_id', $user->id)->findOrFail($id);
+        }
+        
         return view('edit', compact('book'));
     }
 
     // --- UPDATE BUKU ---
     public function update(Request $request, $id)
     {
-        $book = Book::where('user_id', auth()->id())->findOrFail($id);
+        $user = auth()->user();
+        
+        // Admin bisa update semua buku, user biasa hanya bisa update buku miliknya
+        if ($user->role === 'admin') {
+            $book = Book::findOrFail($id);
+        } else {
+            $book = Book::where('user_id', $user->id)->findOrFail($id);
+        }
 
         // 4. Validasi Update
         $request->validate([
@@ -205,7 +219,14 @@ class BookController extends Controller
     // --- HAPUS BUKU ---
     public function destroy($id)
     {
-        $book = Book::where('user_id', auth()->id())->where('id', $id)->first();
+        $user = auth()->user();
+        
+        // Admin bisa hapus semua buku, user biasa hanya bisa hapus buku miliknya
+        if ($user->role === 'admin') {
+            $book = Book::find($id);
+        } else {
+            $book = Book::where('user_id', $user->id)->where('id', $id)->first();
+        }
         
         if ($book) {
             // 6. Hapus gambar fisik saat buku dihapus (Kebersihan Server)
@@ -214,7 +235,9 @@ class BookController extends Controller
             }
             
             $book->delete();
+            return redirect()->route('home')->with('success', 'Buku berhasil dihapus.');
         }
-        return redirect()->route('home');
+        
+        return redirect()->route('home')->with('error', 'Buku tidak ditemukan atau Anda tidak memiliki akses.');
     }
 }

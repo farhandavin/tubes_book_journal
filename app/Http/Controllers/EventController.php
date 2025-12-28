@@ -40,6 +40,8 @@ class EventController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'event_date' => 'required|date',
+            'description' => 'nullable|string',
+            'location' => 'nullable|string|max:255',
         ]);
 
         $event = Event::findOrFail($id);
@@ -47,6 +49,8 @@ class EventController extends Controller
         $event->update([
             'title' => $request->title,
             'event_date' => $request->event_date,
+            'description' => $request->description,
+            'location' => $request->location,
         ]);
 
         return redirect()->route('events.index')->with('success', 'Event berhasil diperbarui!');

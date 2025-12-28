@@ -28,6 +28,12 @@ class Book extends Model
         return $this->hasMany(Borrowing::class);
     }
 
+    // Relasi ke pemilik buku (User)
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     // Cek apakah buku sedang dipinjam oleh siapapun
    public function isBorrowed()
 {
