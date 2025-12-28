@@ -2,20 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Book;
 use App\Models\Borrowing;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
     // --- MANAJEMEN USER ---
 
-    // Tampilkan daftar semua user
+    // Tampilkan daftar user (dengan Pagination & Filter Self)
     public function index()
     {
-        $users = User::all();
+        // Ambil semua user, KECUALI admin yang sedang login
+        // Menggunakan pagination 10 per halaman
+        $users = User::where('id', '!=', auth()->id())->paginate(10);
+
         return view('admin.users', compact('users'));
     }
 
@@ -45,14 +48,17 @@ class AdminController extends Controller
         return redirect()->route('admin.users')->with('success', 'User berhasil ditambahkan.');
     }
 
-    // Hapus user
-    public function destroy($id)
+    // Hapus user (Menggabungkan keamanan & kebersihan kode)
+    public function destroy(User $user)
     {
-        if ($id == auth()->id()) {
+        // Cek keamanan: Admin tidak boleh menghapus dirinya sendiri
+        if ($user->id == auth()->id()) {
             return back()->with('error', 'Anda tidak bisa menghapus akun sendiri saat sedang login.');
         }
 
-        User::destroy($id);
+        // Proses hapus
+        $user->delete();
+
         return back()->with('success', 'User berhasil dihapus.');
     }
 
@@ -62,6 +68,7 @@ class AdminController extends Controller
     {
         $totalUsers = User::count();
         $totalBooks = Book::count();
+        // Menghitung peminjaman yang statusnya 'dipinjam'
         $activeLoans = Borrowing::where('status', 'dipinjam')->count();
         
         return view('admin.dashboard', compact('totalUsers', 'totalBooks', 'activeLoans'));
@@ -78,7 +85,8 @@ class AdminController extends Controller
         header('Content-Type: text/csv');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         
-        fputcsv($handle, ['ID', 'Nama', 'Email', 'Role', 'Tanggal Bergabung']); // Header CSV
+        // Header Kolom CSV
+        fputcsv($handle, ['ID', 'Nama', 'Email', 'Role', 'Tanggal Bergabung']); 
         
         foreach ($users as $user) {
             fputcsv($handle, [
@@ -111,7 +119,7 @@ class AdminController extends Controller
                 $book->id,
                 $book->title,
                 $book->author,
-                $book->category ?? '-', // Asumsi kolom category ada
+                $book->category ?? '-', // Menggunakan '??' untuk mencegah error jika kolom kosong
                 $book->year,
                 $book->stock ?? '0'
             ]);
