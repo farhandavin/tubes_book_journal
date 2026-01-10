@@ -28,10 +28,16 @@ class BookController extends Controller
             $query->where('category', $categoryFilter);
         }
 
-        $books = $query->orderBy($column, $order)->get();
+        $books = $query->with('reviews.user')->orderBy($column, $order)->get();
         $categories = Book::whereNotNull('category')->distinct()->pluck('category');
 
         return view('index', compact('books', 'categories'));
+    }
+
+    public function show($id)
+    {
+        $book = Book::with(['reviews.user', 'user'])->findOrFail($id);
+        return view('book-detail', compact('book'));
     }
 
     public function addForm()

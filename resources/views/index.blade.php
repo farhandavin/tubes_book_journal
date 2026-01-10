@@ -46,7 +46,7 @@
             @foreach($books as $book)
                 <div class="group bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full relative">
                     
-                    <div class="relative aspect-[2/3] overflow-hidden bg-gray-100">
+                    <div class="relative aspect-[2/3] overflow-hidden bg-gray-100 cursor-pointer" onclick="window.location='{{ route('book.show', $book->id) }}'">
                         @if($book->cover_image)
                             <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" class="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-500">
                         @else
@@ -62,7 +62,9 @@
 
                     <div class="p-5 flex flex-col flex-grow">
                         <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-lg font-semibold text-gray-900 line-clamp-1 group-hover:text-blue-600 transition-colors">{{ $book->title }}</h3>
+                            <a href="{{ route('book.show', $book->id) }}" class="text-lg font-semibold text-gray-900 line-clamp-1 group-hover:text-blue-600 transition-colors hover:underline">
+                                {{ $book->title }}
+                            </a>
                             <div class="flex items-center gap-1 text-yellow-500 text-sm font-bold">
                                 <span>★</span><span>{{ $book->rating }}</span>
                             </div>
@@ -100,6 +102,9 @@
                                         <button type="submit" class="w-full py-2 px-3 bg-red-50 hover:bg-red-100 text-red-600 text-xs rounded-lg transition-colors" onclick="return confirm('Hapus?')">Hapus</button>
                                     </form>
                                 </div>
+                                <a href="{{ route('book.show', $book->id) }}" class="block w-full text-center py-2 mt-2 border border-blue-500 text-blue-600 hover:bg-blue-50 text-xs font-medium rounded-lg transition-colors">
+                                    📖 Lihat Detail & Ulasan
+                                </a>
                             @else
                                 @if($book->isBorrowed())
                                     <button disabled class="w-full py-2 bg-gray-100 text-gray-400 text-xs font-medium rounded-lg cursor-not-allowed">Dipinjam</button>
@@ -111,6 +116,63 @@
                                 @else
                                     <button disabled class="w-full py-2 bg-gray-100 text-gray-400 text-xs font-medium rounded-lg cursor-not-allowed">Stok Habis</button>
                                 @endif
+
+                                {{-- Section: Ulasan dari Pengguna Lain --}}
+                                @if($book->reviews->count() > 0)
+                                    <div class="mt-3 pt-3 border-t border-gray-100">
+                                        <p class="text-xs font-medium text-gray-700 mb-2">
+                                            <span class="text-yellow-500">★</span> Ulasan ({{ $book->reviews->count() }})
+                                        </p>
+                                        
+                                        {{-- Container ulasan (menggunakan x-data atau vanilla JS simple) --}}
+                                        <div id="reviews-container-{{ $book->id }}">
+                                            {{-- Tampilan Awal (Max 2) --}}
+                                            <div class="space-y-2 reviews-short">
+                                                @foreach($book->reviews->take(2) as $review)
+                                                    <div class="bg-gray-50 rounded-lg p-2">
+                                                        <div class="flex items-center justify-between mb-1">
+                                                            <span class="text-xs font-medium text-gray-700">{{ $review->user->name ?? 'Anonymous' }}</span>
+                                                            <div class="flex">
+                                                                @for($i=1; $i<=5; $i++)
+                                                                    <span class="text-[10px] {{ $i <= $review->rating ? 'text-yellow-500' : 'text-gray-300' }}">★</span>
+                                                                @endfor
+                                                            </div>
+                                                        </div>
+                                                        @if($review->comment)
+                                                            <p class="text-xs text-gray-500 line-clamp-2">{{ $review->comment }}</p>
+                                                        @endif
+                                                    </div>
+                                                @endforeach
+                                            </div>
+
+                                            {{-- Tampilan Penuh (Hidden by default) --}}
+                                            @if($book->reviews->count() > 2)
+                                                <div class="space-y-2 reviews-full hidden mt-2">
+                                                    @foreach($book->reviews->skip(2) as $review)
+                                                        <div class="bg-gray-50 rounded-lg p-2">
+                                                            <div class="flex items-center justify-between mb-1">
+                                                                <span class="text-xs font-medium text-gray-700">{{ $review->user->name ?? 'Anonymous' }}</span>
+                                                                <div class="flex">
+                                                                    @for($i=1; $i<=5; $i++)
+                                                                        <span class="text-[10px] {{ $i <= $review->rating ? 'text-yellow-500' : 'text-gray-300' }}">★</span>
+                                                                    @endfor
+                                                                </div>
+                                                            </div>
+                                                            @if($review->comment)
+                                                                <p class="text-xs text-gray-500">{{ $review->comment }}</p>
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+
+                                                <button onclick="toggleReviews({{ $book->id }}, this, {{ $book->reviews->count() }})" class="text-xs text-blue-600 hover:underline mt-1 focus:outline-none">
+                                                    Lihat semua ulasan ({{ $book->reviews->count() }}) ↓
+                                                </button>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+
                                 <button onclick="openReviewModal({{ $book->id }}, '{{ addslashes($book->title) }}')" class="w-full py-2 border border-gray-200 hover:border-gray-300 text-gray-600 text-xs font-medium rounded-lg transition-colors mt-2">
                                     Beri Ulasan
                                 </button>
@@ -188,6 +250,19 @@
     }
     function closeReviewModal() {
         document.getElementById('reviewModal').classList.add('hidden');
+    }
+
+    function toggleReviews(bookId, btn, count) {
+        const container = document.getElementById('reviews-container-' + bookId);
+        const fullReviews = container.querySelector('.reviews-full');
+        
+        if (fullReviews.classList.contains('hidden')) {
+            fullReviews.classList.remove('hidden');
+            btn.innerText = 'Sembunyikan ulasan ↑';
+        } else {
+            fullReviews.classList.add('hidden');
+            btn.innerText = 'Lihat semua ulasan (' + count + ') ↓';
+        }
     }
 </script>
 @endsection
